@@ -9,193 +9,68 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #f7f4ee;
-  --ink: #1c1812;
-  --muted: #9a8a78;
-  --line: #d0c2b0;
+  --bg: #f7f4ee; --ink: #1c1812; --muted: #9a8a78; --line: #d0c2b0;
 }
-html, body {
-  height: 100%;
-  background: var(--bg);
-  font-family: 'Crimson Pro', serif;
-  color: var(--ink);
-  overflow: hidden;
-}
+html, body { height:100%; background:var(--bg); font-family:'Crimson Pro',serif; color:var(--ink); overflow:hidden; }
 
-/* TOP BAR */
 .topbar {
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  border-bottom: 1px solid var(--line);
-  background: var(--bg);
-  flex-shrink: 0;
-  z-index: 100;
-  position: relative;
+  height:42px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 24px; border-bottom:1px solid var(--line); background:var(--bg); z-index:100; position:relative;
 }
-.topbar-hint {
-  font-size: 12px;
-  color: var(--muted);
-  font-style: italic;
-}
+.topbar-hint { font-size:12px; color:var(--muted); font-style:italic; }
 .pdf-btn {
-  display: flex; align-items: center; gap: 7px;
-  background: none; border: 1px solid var(--muted);
-  color: var(--muted); padding: 5px 14px;
-  font-family: 'Crimson Pro', serif; font-size: 13px;
-  cursor: pointer; border-radius: 2px; letter-spacing: 0.4px;
-  transition: all 0.18s;
+  display:flex; align-items:center; gap:7px; background:none; border:1px solid var(--muted);
+  color:var(--muted); padding:5px 14px; font-family:'Crimson Pro',serif; font-size:13px;
+  cursor:pointer; border-radius:2px; transition:all 0.18s;
 }
-.pdf-btn:hover { border-color: var(--ink); color: var(--ink); }
+.pdf-btn:hover { border-color:var(--ink); color:var(--ink); }
 
-/* SCROLL */
-.scroll-wrapper {
-  width: 100%;
-  height: calc(100vh - 42px);
-  overflow-x: auto;
-  overflow-y: hidden;
-  user-select: none;
-}
+.scroll-wrapper { width:100%; height:calc(100vh - 42px); overflow-x:auto; overflow-y:hidden; user-select:none; }
+.canvas { position:relative; cursor:grab; }
+.canvas.panning { cursor:grabbing; }
+.canvas.dragging-card { cursor:ns-resize; }
 
-/* CANVAS */
-.canvas {
-  position: relative;
-  cursor: grab;
-}
-.canvas.panning { cursor: grabbing; }
-.canvas.dragging-card { cursor: ns-resize; }
+.era-band { position:absolute; display:flex; align-items:center; padding-left:8px; overflow:hidden; pointer-events:none; }
+.era-band-label { font-family:'Playfair Display',serif; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:white; white-space:nowrap; }
+.axis-line { position:absolute; left:0; right:0; height:2px; background:var(--ink); opacity:0.15; pointer-events:none; }
+.yr-tick { position:absolute; width:1px; background:var(--muted); opacity:0.35; transform:translateX(-50%); pointer-events:none; }
+.yr-tick.major { opacity:0.65; }
+.yr-label { position:absolute; font-size:10px; color:var(--muted); transform:translateX(-50%); font-family:'Crimson Pro',serif; pointer-events:none; }
+.stems-svg { position:absolute; top:0; left:0; pointer-events:none; z-index:1; overflow:visible; }
+.evt-dot { position:absolute; width:9px; height:9px; border-radius:50%; transform:translate(-50%,-50%); z-index:5; border:2px solid var(--bg); pointer-events:none; }
+.evt-card { position:absolute; background:white; border-top:2px solid; padding:5px 8px 7px; box-shadow:0 1px 8px rgba(0,0,0,0.07); z-index:4; cursor:ns-resize; transition:box-shadow 0.15s; }
+.evt-card:hover { box-shadow:0 3px 16px rgba(0,0,0,0.14); z-index:10; }
+.evt-card.dragging { box-shadow:0 8px 28px rgba(0,0,0,0.22); z-index:100; opacity:0.92; }
+.evt-year { font-family:'Playfair Display',serif; font-size:11px; font-weight:700; display:block; margin-bottom:2px; }
+.evt-text { font-size:11px; line-height:1.38; color:#3a3028; }
 
-/* ERA BAND */
-.era-band {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  padding-left: 7px;
-  overflow: hidden;
-  pointer-events: none;
-}
-.era-band-label {
-  font-family: 'Playfair Display', serif;
-  font-size: 9px; font-weight: 700;
-  letter-spacing: 1px; text-transform: uppercase;
-  color: white; white-space: nowrap;
-}
+.legend { position:fixed; bottom:14px; left:20px; display:flex; gap:16px; flex-wrap:wrap; z-index:50; pointer-events:none; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); font-family:'Crimson Pro',serif; }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
-/* AXIS */
-.axis-line {
-  position: absolute;
-  left: 0; right: 0; height: 2px;
-  background: var(--ink); opacity: 0.15;
-  pointer-events: none;
-}
-
-/* TICK */
-.yr-tick {
-  position: absolute;
-  width: 1px; background: var(--muted);
-  opacity: 0.35; transform: translateX(-50%);
-  pointer-events: none;
-}
-.yr-tick.major { opacity: 0.6; }
-
-/* SVG stems layer */
-.stems-svg {
-  position: absolute;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: 1;
-  overflow: visible;
-}
-
-/* DOT */
-.evt-dot {
-  position: absolute;
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 5;
-  border: 2px solid var(--bg);
-  pointer-events: none;
-}
-
-/* CARD */
-.evt-card {
-  position: absolute;
-  width: 144px;
-  background: white;
-  border-top: 2px solid;
-  padding: 5px 8px 7px;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
-  z-index: 4;
-  cursor: ns-resize;
-  transition: box-shadow 0.15s;
-}
-.evt-card:hover { box-shadow: 0 3px 16px rgba(0,0,0,0.14); z-index: 10; }
-.evt-card.dragging {
-  box-shadow: 0 8px 28px rgba(0,0,0,0.22);
-  z-index: 100;
-  opacity: 0.92;
-}
-.evt-year {
-  font-family: 'Playfair Display', serif;
-  font-size: 11px; font-weight: 700;
-  display: block; margin-bottom: 2px;
-}
-.evt-text {
-  font-size: 11px; line-height: 1.38; color: #3a3028;
-}
-
-/* LEGEND */
-.legend {
-  position: fixed; bottom: 14px; left: 20px;
-  display: flex; gap: 16px; flex-wrap: wrap;
-  z-index: 50; pointer-events: none;
-}
-.legend-item {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 11px; color: var(--muted);
-  font-family: 'Crimson Pro', serif;
-}
-.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-/* MODAL */
-.modal-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.38); z-index: 1000;
-  align-items: center; justify-content: center;
-}
-.modal-overlay.show { display: flex; }
-.modal {
-  background: white; padding: 36px 40px;
-  max-width: 360px; width: 90%; text-align: center;
-}
-.modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-.modal-body { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
-.modal-close { background: var(--ink); color: white; border: none; padding: 9px 22px; font-family: 'Crimson Pro', serif; font-size: 14px; cursor: pointer; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.38); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay.show { display:flex; }
+.modal { background:white; padding:36px 40px; max-width:360px; width:90%; text-align:center; }
+.modal-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; margin-bottom:10px; }
+.modal-body { font-size:14px; color:var(--muted); line-height:1.6; margin-bottom:22px; }
+.modal-close { background:var(--ink); color:white; border:none; padding:9px 22px; font-family:'Crimson Pro',serif; font-size:14px; cursor:pointer; }
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <span class="topbar-hint">↕ Glissez les fiches verticalement · ← → Naviguez horizontalement</span>
   <button class="pdf-btn" onclick="exportPDF()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="7 10 12 15 17 10"/>
-      <line x1="12" y1="15" x2="12" y2="3"/>
+      <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
     </svg>
     Exporter PDF
   </button>
 </div>
-
 <div class="scroll-wrapper" id="scrollWrapper">
   <div class="canvas" id="canvas"></div>
 </div>
-
 <div class="legend" id="legend"></div>
-
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <div class="modal-title" id="modalTitle">Export PDF</div>
@@ -205,13 +80,12 @@ html, body {
 </div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────────────────────────
 const eras = [
   { id:1, label:"Restauration",         start:1790, end:1830, color:"#8b2e1a" },
   { id:2, label:"Monarchie de Juillet", start:1830, end:1848, color:"#1a5c8b" },
   { id:3, label:"IIe République",       start:1848, end:1852, color:"#1a7a42" },
   { id:4, label:"Second Empire",        start:1852, end:1870, color:"#6b1a8b" },
-  { id:5, label:"IIIe République",      start:1870, end:1882, color:"#8b6a1a" },
+  { id:5, label:"IIIe République",      start:1870, end:1881, color:"#8b6a1a" },
 ];
 
 const allEvents = [
@@ -233,7 +107,7 @@ const allEvents = [
   { y:1828,    e:1, t:"Ministère Martignac (janvier)" },
   { y:1829,    e:1, t:"Ministère Polignac (8 août)" },
   { y:1830,    e:1, t:"Adresse des 221 (mars) ; 4 ordonnances ; Trois Glorieuses (27–29 juil.)" },
-  { y:1830.7,  e:2, t:"Louis-Philippe Ier proclamé Roi des Français (9 août)" },
+  { y:1830.6,  e:2, t:"Louis-Philippe Ier proclamé Roi des Français (9 août)" },
   { y:1831,    e:2, t:"Lois abaissant le cens ; révolte des Canuts à Lyon" },
   { y:1832,    e:2, t:"Mort de Casimir Perier (choléra) ; insurrection de juin" },
   { y:1834,    e:2, t:"Répression sanglante à Lyon (avril)" },
@@ -244,11 +118,11 @@ const allEvents = [
   { y:1846,    e:2, t:"Découverte de Neptune ; dissolution (juillet)" },
   { y:1847,    e:2, t:"Crise agricole et financière ; campagne des banquets" },
   { y:1848.05, e:3, t:"Interdiction du banquet parisien ; abdication du roi ; République (24 fév.)" },
-  { y:1848.3,  e:3, t:"Ateliers nationaux (26 fév.) ; suffrage universel masculin ; élections (23 avr.)" },
+  { y:1848.25, e:3, t:"Ateliers nationaux (26 fév.) ; suffrage universel masculin ; élections (23 avr.)" },
   { y:1848.5,  e:3, t:"Fermeture ateliers nationaux (21 juin) ; insurrection ; état de siège (24 juin)" },
-  { y:1848.9,  e:3, t:"Nouvelle Constitution (nov.) ; élection de Louis-Napoléon Bonaparte (10 déc.)" },
-  { y:1849.4,  e:3, t:"Élections législatives (mai) ; manifestation du 13 juin" },
-  { y:1849.6,  e:3, t:"Loi restrictive sur la presse (juillet)" },
+  { y:1848.75, e:3, t:"Nouvelle Constitution (nov.) ; élection de Louis-Napoléon Bonaparte (10 déc.)" },
+  { y:1849.35, e:3, t:"Élections législatives (mai) ; manifestation du 13 juin" },
+  { y:1849.55, e:3, t:"Loi restrictive sur la presse (juillet)" },
   { y:1850.2,  e:3, t:"Loi Falloux sur l'enseignement libre (15 mars)" },
   { y:1851.9,  e:3, t:"Coup d'État de Louis-Napoléon Bonaparte (2 déc.)" },
   { y:1852.0,  e:4, t:"Constitution de 1852 ; censure ; proclamation du Second Empire (25 déc.)" },
@@ -258,17 +132,17 @@ const allEvents = [
   { y:1859,    e:4, t:"Loi d'amnistie pour les proscrits politiques" },
   { y:1860,    e:4, t:"Traité de libre-échange avec l'Angleterre" },
   { y:1862,    e:4, t:"Grève des typographes ; grâce impériale" },
-  { y:1863.4,  e:4, t:"Retour de Thiers à la chambre (mai)" },
+  { y:1863.35, e:4, t:"Retour de Thiers à la chambre (mai)" },
   { y:1864,    e:4, t:"Manifeste des Soixante ; reconnaissance du droit de grève" },
   { y:1865,    e:4, t:"Autorisation paiement par chèque ; projet Duruy sur l'école" },
   { y:1866.5,  e:4, t:"Bataille de Sadowa (3 juillet)" },
   { y:1867,    e:4, t:"Libéralisation (presse, réunion, interpellation) ; sociétés anonymes ; Exposition Universelle" },
   { y:1869.95, e:4, t:"Le chef du gouvernement doit être issu de la majorité (27 déc.)" },
-  { y:1870.3,  e:4, t:"Ministère Ollivier (2 janv.) ; constitution libérale (20 avr.) ; plébiscite (8 mai)" },
-  { y:1870.55, e:5, t:"Guerre contre la Prusse ; défaite de Sedan ; République (4 sept.) ; siège de Paris ; décret Crémieux" },
+  { y:1870.25, e:4, t:"Ministère Ollivier (2 janv.) ; constitution libérale (20 avr.) ; plébiscite (8 mai)" },
+  { y:1870.6,  e:5, t:"Guerre contre la Prusse ; défaite de Sedan ; République (4 sept.) ; siège de Paris ; décret Crémieux" },
   { y:1871,    e:5, t:"Armistice (28 janv.) ; Commune de Paris (29 mars) ; Paix de Francfort (10 mai)" },
   { y:1873.1,  e:5, t:"Mort de Napoléon III (9 janv.) ; pouvoirs de Thiers limités ; Mac-Mahon président (24 mai)" },
-  { y:1873.9,  e:5, t:"Loi de septennalité (19 nov.) ; ministère de Broglie" },
+  { y:1873.85, e:5, t:"Loi de septennalité (19 nov.) ; ministère de Broglie" },
   { y:1875.08, e:5, t:"Amendement Wallon (30 janv.) — Président élu par le Parlement" },
   { y:1876.1,  e:5, t:"Victoire républicaine aux législatives (hiver)" },
   { y:1877,    e:5, t:"Simon contre le cléricalisme (4 mai) ; crise du 16 mai ; dissolution" },
@@ -277,364 +151,334 @@ const allEvents = [
   { y:1881,    e:5, t:"Paris concentre 17 % des citadins français" },
 ];
 
-// ── LAYOUT ────────────────────────────────────────────────────────────────
-const PX_PER_YEAR = 90;
-const Y_START     = 1787;
-const Y_END       = 1883;
-const PAD_L       = 60;
-const PAD_R       = 60;
-const CARD_W      = 144;
-const CARD_H      = 58;
+// ── SCREEN LAYOUT ─────────────────────────────────────────────────────────
+const PX_PER_YEAR = 200;
+const FIRST_YEAR  = 1790;
+const LAST_YEAR   = 1881;
+const PAD_L       = 80;
+const PAD_R       = 80;
+const CARD_W      = 155;
+const CARD_H      = 62;
 const VIEWPORT_H  = window.innerHeight - 42;
 const AXIS_Y      = Math.round(VIEWPORT_H * 0.5);
-const TOTAL_W     = PAD_L + (Y_END - Y_START) * PX_PER_YEAR + PAD_R;
+const TOTAL_W     = PAD_L + (LAST_YEAR - FIRST_YEAR) * PX_PER_YEAR + PAD_R;
 const CANVAS_H    = VIEWPORT_H;
-const ERA_BAND_H  = 18;
-const ERA_BAND_Y  = AXIS_Y - ERA_BAND_H - 10;
+const ERA_BAND_H  = 20;
+const ERA_BAND_Y  = AXIS_Y - ERA_BAND_H - 12;
+const CARD_TOP_MIN = 2;
+const CARD_TOP_MAX = CANVAS_H - CARD_H - 2;
 
-// Min/max card top (keep cards within canvas)
-const CARD_TOP_MIN = 4;
-const CARD_TOP_MAX = CANVAS_H - CARD_H - 4;
+function xOf(yr) { return PAD_L + (yr - FIRST_YEAR) * PX_PER_YEAR; }
 
-function xOf(yr) { return PAD_L + (yr - Y_START) * PX_PER_YEAR; }
-
-// ── INITIAL PLACEMENT (collision-free) ────────────────────────────────────
-const sorted = [...allEvents].sort((a, b) => a.y - b.y);
+// ── COLLISION-FREE INITIAL PLACEMENT ─────────────────────────────────────
+const sorted = [...allEvents].sort((a,b) => a.y - b.y);
 const placedUp = [], placedDn = [];
 
 function overlaps(r1, r2) {
-  return !(r1.x2 + 6 < r2.x1 || r2.x2 + 6 < r1.x1 || r1.y2 < r2.y1 || r2.y2 < r1.y1);
+  return !(r1.x2 + 8 < r2.x1 || r2.x2 + 8 < r1.x1 || r1.y2 + 4 < r2.y1 || r2.y2 + 4 < r1.y1);
 }
-
 function findCardTop(x, preferUp) {
-  const cx1 = x - CARD_W / 2, cx2 = x + CARD_W / 2;
-  const maxUp = AXIS_Y - ERA_BAND_H - 14 - CARD_H;
-  const maxDn = CANVAS_H - CARD_H - 4;
-  const step  = 6;
-
-  for (const [goUp, pool] of preferUp
-      ? [[true, placedUp],[false, placedDn]]
-      : [[false, placedDn],[true, placedUp]]) {
-    const start = goUp ? AXIS_Y - 20 - CARD_H : AXIS_Y + 20;
-    const limit = goUp ? CARD_TOP_MIN : maxDn;
-    const dir   = goUp ? -step : step;
-
+  const cx1 = x - CARD_W/2 - 4, cx2 = x + CARD_W/2 + 4;
+  const pairs = preferUp ? [[true,placedUp],[false,placedDn]] : [[false,placedDn],[true,placedUp]];
+  for (const [goUp, pool] of pairs) {
+    const start = goUp ? AXIS_Y - 24 - CARD_H : AXIS_Y + 24;
+    const limit = goUp ? CARD_TOP_MIN : CARD_TOP_MAX;
+    const dir = goUp ? -8 : 8;
     for (let t = start; goUp ? t >= limit : t <= limit; t += dir) {
-      const r = { x1: cx1, x2: cx2, y1: t, y2: t + CARD_H };
-      if (!pool.some(p => overlaps(r, p))) {
-        pool.push(r);
-        return { cardTop: t, up: goUp };
-      }
+      const r = { x1:cx1, x2:cx2, y1:t, y2:t+CARD_H };
+      if (!pool.some(p => overlaps(r,p))) { pool.push(r); return { cardTop:t, up:goUp }; }
     }
   }
-  // Fallback
   const t = preferUp ? CARD_TOP_MIN : CARD_TOP_MAX;
-  (preferUp ? placedUp : placedDn).push({ x1:cx1, x2:cx2, y1:t, y2:t+CARD_H });
-  return { cardTop: t, up: preferUp };
+  (preferUp ? placedUp : placedDn).push({x1:cx1,x2:cx2,y1:t,y2:t+CARD_H});
+  return { cardTop:t, up:preferUp };
 }
 
 // ── BUILD DOM ─────────────────────────────────────────────────────────────
 const canvasEl = document.getElementById('canvas');
 canvasEl.style.cssText = `width:${TOTAL_W}px;height:${CANVAS_H}px;position:relative;`;
 
-// SVG stems layer
 const stemsSvg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-stemsSvg.setAttribute('width', TOTAL_W);
-stemsSvg.setAttribute('height', CANVAS_H);
+stemsSvg.setAttribute('width', TOTAL_W); stemsSvg.setAttribute('height', CANVAS_H);
 stemsSvg.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible;`;
 canvasEl.appendChild(stemsSvg);
 
-// Era bands
 eras.forEach(era => {
-  const x1 = xOf(era.start), x2 = xOf(era.end);
-  const band = document.createElement('div');
-  band.className = 'era-band';
-  Object.assign(band.style, {
-    left: x1+'px', top: ERA_BAND_Y+'px',
-    width: (x2-x1)+'px', height: ERA_BAND_H+'px',
-    background: era.color, opacity:'0.88',
-  });
-  band.innerHTML = `<span class="era-band-label">${era.label}</span>`;
+  const x1=xOf(era.start), x2=xOf(era.end);
+  const band=document.createElement('div'); band.className='era-band';
+  Object.assign(band.style,{left:x1+'px',top:ERA_BAND_Y+'px',width:(x2-x1)+'px',height:ERA_BAND_H+'px',background:era.color,opacity:'0.88'});
+  band.innerHTML=`<span class="era-band-label">${era.label}</span>`;
   canvasEl.appendChild(band);
 });
 
-// Axis
-const axisEl = document.createElement('div');
-axisEl.className = 'axis-line';
-axisEl.style.top = AXIS_Y + 'px';
+const axisEl=document.createElement('div'); axisEl.className='axis-line'; axisEl.style.top=AXIS_Y+'px';
 canvasEl.appendChild(axisEl);
 
-// Ticks
-for (let yr = Math.ceil(Y_START/5)*5; yr <= Y_END; yr += 5) {
-  const major = yr % 10 === 0;
-  const x = xOf(yr), h = major ? 10 : 5;
-  const tick = document.createElement('div');
-  tick.className = 'yr-tick' + (major?' major':'');
-  Object.assign(tick.style, { left:x+'px', top:(AXIS_Y-h/2)+'px', height:h+'px' });
+for (let yr=FIRST_YEAR; yr<=LAST_YEAR; yr++) {
+  const major=yr%10===0, mid=yr%5===0;
+  const x=xOf(yr), h=major?12:(mid?7:4);
+  const tick=document.createElement('div'); tick.className='yr-tick'+(major?' major':'');
+  Object.assign(tick.style,{left:x+'px',top:(AXIS_Y-h/2)+'px',height:h+'px'});
   canvasEl.appendChild(tick);
+  if (major||mid) {
+    const lbl=document.createElement('div'); lbl.className='yr-label';
+    Object.assign(lbl.style,{left:x+'px',top:(AXIS_Y+10)+'px',fontSize:major?'11px':'9px',opacity:major?'1':'0.6'});
+    lbl.textContent=yr; canvasEl.appendChild(lbl);
+  }
 }
 
-// ── EVENT NODES ───────────────────────────────────────────────────────────
-// Each event node: { data, x, cardTop, stemLine (SVG line), dot (div), card (div) }
-const nodes = [];
-
+const nodes=[];
 sorted.forEach(ev => {
-  const x     = xOf(ev.y);
-  const era   = eras.find(e => e.id === ev.e);
-  const color = era ? era.color : '#888';
-  const prefUp = ev.e % 2 === 1;
-  const { cardTop } = findCardTop(x, prefUp);
-
-  // SVG stem line
-  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-  line.setAttribute('stroke', color);
-  line.setAttribute('stroke-width', '1');
-  line.setAttribute('opacity', '0.3');
+  const x=xOf(ev.y), era=eras.find(e=>e.id===ev.e), color=era?era.color:'#888';
+  const {cardTop}=findCardTop(x, ev.e%2===1);
+  const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('stroke',color); line.setAttribute('stroke-width','1.2'); line.setAttribute('opacity','0.3');
   stemsSvg.appendChild(line);
-
-  // Dot
-  const dot = document.createElement('div');
-  dot.className = 'evt-dot';
-  Object.assign(dot.style, { left:x+'px', top:AXIS_Y+'px', background:color });
+  const dot=document.createElement('div'); dot.className='evt-dot';
+  Object.assign(dot.style,{left:x+'px',top:AXIS_Y+'px',background:color});
   canvasEl.appendChild(dot);
-
-  // Card
-  const card = document.createElement('div');
-  card.className = 'evt-card';
-  Object.assign(card.style, {
-    left: (x - CARD_W/2)+'px',
-    top:  cardTop+'px',
-    borderTopColor: color,
-    width: CARD_W+'px',
-  });
-  card.innerHTML = `<span class="evt-year" style="color:${color}">${Math.floor(ev.y)}</span><span class="evt-text">${ev.t}</span>`;
+  const card=document.createElement('div'); card.className='evt-card';
+  Object.assign(card.style,{left:(x-CARD_W/2)+'px',top:cardTop+'px',borderTopColor:color,width:CARD_W+'px'});
+  card.innerHTML=`<span class="evt-year" style="color:${color}">${Math.floor(ev.y)}</span><span class="evt-text">${ev.t}</span>`;
   canvasEl.appendChild(card);
-
-  const node = { data: ev, x, cardTop, color, line, dot, card };
+  const node={data:ev,x,cardTop,color,line,dot,card};
   nodes.push(node);
-  updateStem(node);
+  redrawStem(node);
 });
 
-function updateStem(node) {
-  const cardCenterX = node.x;
-  // stem connects dot (axis) to middle-bottom or middle-top of card
-  const dotY = AXIS_Y;
-  const isUp = node.cardTop + CARD_H < AXIS_Y;
-  const cardEdgeY = isUp ? node.cardTop + CARD_H : node.cardTop;
-  node.line.setAttribute('x1', cardCenterX);
-  node.line.setAttribute('y1', dotY);
-  node.line.setAttribute('x2', cardCenterX);
-  node.line.setAttribute('y2', cardEdgeY);
+function redrawStem(n) {
+  const isUp=n.cardTop+CARD_H<AXIS_Y, end=isUp?n.cardTop+CARD_H:n.cardTop;
+  n.line.setAttribute('x1',n.x); n.line.setAttribute('y1',AXIS_Y);
+  n.line.setAttribute('x2',n.x); n.line.setAttribute('y2',end);
 }
 
-// ── DRAG BEHAVIOUR ────────────────────────────────────────────────────────
-// Two modes:
-// 1. Dragging a card → move it vertically
-// 2. Dragging canvas background → pan horizontally
-
-let activeCardNode = null;  // card being dragged
-let cardDragStartY = 0;
-let cardDragStartTop = 0;
-
-let panning = false;
-let panStartX = 0;
-let panScrollLeft = 0;
-
-const sw = document.getElementById('scrollWrapper');
-
-// CARD drag start
-nodes.forEach(node => {
-  node.card.addEventListener('mousedown', e => {
-    e.stopPropagation();
-    activeCardNode = node;
-    cardDragStartY   = e.clientY;
-    cardDragStartTop = node.cardTop;
-    node.card.classList.add('dragging');
-    canvasEl.classList.add('dragging-card');
+// ── DRAG ──────────────────────────────────────────────────────────────────
+let activeNode=null,dragStartY=0,dragStartTop=0,panning=false,panStartX=0,panScroll=0;
+const sw=document.getElementById('scrollWrapper');
+nodes.forEach(node=>{
+  node.card.addEventListener('mousedown',e=>{
+    e.stopPropagation(); activeNode=node; dragStartY=e.clientY; dragStartTop=node.cardTop;
+    node.card.classList.add('dragging'); canvasEl.classList.add('dragging-card');
   });
 });
-
-// CANVAS pan start
-canvasEl.addEventListener('mousedown', e => {
-  if (activeCardNode) return; // already handled
-  panning = true;
-  panStartX    = e.clientX;
-  panScrollLeft = sw.scrollLeft;
-  canvasEl.classList.add('panning');
+canvasEl.addEventListener('mousedown',e=>{
+  if(activeNode)return; panning=true; panStartX=e.clientX; panScroll=sw.scrollLeft; canvasEl.classList.add('panning');
 });
-
-window.addEventListener('mousemove', e => {
-  if (activeCardNode) {
-    const delta = e.clientY - cardDragStartY;
-    let newTop = cardDragStartTop + delta;
-    newTop = Math.max(CARD_TOP_MIN, Math.min(CARD_TOP_MAX, newTop));
-    activeCardNode.cardTop = newTop;
-    activeCardNode.card.style.top = newTop + 'px';
-    updateStem(activeCardNode);
-  } else if (panning) {
-    sw.scrollLeft = panScrollLeft - (e.clientX - panStartX);
-  }
+window.addEventListener('mousemove',e=>{
+  if(activeNode){
+    let t=dragStartTop+(e.clientY-dragStartY);
+    t=Math.max(CARD_TOP_MIN,Math.min(CARD_TOP_MAX,t));
+    activeNode.cardTop=t; activeNode.card.style.top=t+'px'; redrawStem(activeNode);
+  } else if(panning){ sw.scrollLeft=panScroll-(e.clientX-panStartX); }
 });
-
-window.addEventListener('mouseup', () => {
-  if (activeCardNode) {
-    activeCardNode.card.classList.remove('dragging');
-    activeCardNode = null;
-    canvasEl.classList.remove('dragging-card');
-  }
-  if (panning) {
-    panning = false;
-    canvasEl.classList.remove('panning');
-  }
+window.addEventListener('mouseup',()=>{
+  if(activeNode){activeNode.card.classList.remove('dragging');activeNode=null;canvasEl.classList.remove('dragging-card');}
+  if(panning){panning=false;canvasEl.classList.remove('panning');}
 });
-
-// Start scroll at ~1810
-sw.scrollLeft = xOf(1810) - 80;
+sw.scrollLeft=xOf(1814)-120;
 
 // ── LEGEND ─────────────────────────────────────────────────────────────────
-const legendEl = document.getElementById('legend');
-eras.forEach(era => {
-  const item = document.createElement('div');
-  item.className = 'legend-item';
-  item.innerHTML = `<div class="legend-dot" style="background:${era.color}"></div>${era.label}`;
+const legendEl=document.getElementById('legend');
+eras.forEach(era=>{
+  const item=document.createElement('div'); item.className='legend-item';
+  item.innerHTML=`<div class="legend-dot" style="background:${era.color}"></div>${era.label}`;
   legendEl.appendChild(item);
 });
 
 // ── PDF EXPORT ─────────────────────────────────────────────────────────────
-function hexToRgb(hex) {
-  return { r:parseInt(hex.slice(1,3),16), g:parseInt(hex.slice(3,5),16), b:parseInt(hex.slice(5,7),16) };
+// The PDF reproduces the exact horizontal frise layout:
+// - A3 landscape pages
+// - Each page covers N years horizontally
+// - Axis is drawn at vertical center of each page
+// - Each card is placed at the correct (x, y) position on the page
+//   mirroring its screen position (above or below axis, at the right distance)
+function hexToRgb(hex){
+  return{r:parseInt(hex.slice(1,3),16),g:parseInt(hex.slice(3,5),16),b:parseInt(hex.slice(5,7),16)};
 }
 
 async function exportPDF() {
-  const modal     = document.getElementById('modalOverlay');
-  const modalBody = document.getElementById('modalBody');
-  document.getElementById('modalTitle').textContent = 'Export PDF';
-  modalBody.textContent = 'Génération en cours…';
+  const modal=document.getElementById('modalOverlay');
+  const modalBody=document.getElementById('modalBody');
+  document.getElementById('modalTitle').textContent='Export PDF';
+  modalBody.textContent='Génération en cours…';
   modal.classList.add('show');
 
   try {
-    await new Promise(r => setTimeout(r, 80));
-    const { jsPDF } = window.jspdf;
+    await new Promise(r=>setTimeout(r,80));
+    const {jsPDF}=window.jspdf;
 
-    // We'll replicate the current layout to PDF.
-    // Scale factor: canvas uses PX_PER_YEAR px/yr, PDF uses pxPerYr mm/yr
-    const PW = 420, PH = 297, M = 14;
-    const usableW = PW - M * 2;
-    const usableH = PH - M * 2;
+    // ── PDF page setup
+    const PW=420, PH=297;  // A3 landscape mm
+    const ML=10, MR=10, MT=8, MB=10;
+    const usableW = PW-ML-MR;   // 400mm
+    const usableH = PH-MT-MB;   // 279mm
 
-    // Horizontal: years per page
-    const pxPerYr = 2.8; // mm / year in PDF
-    const ypp = Math.floor(usableW / pxPerYr);
+    // Axis sits at vertical center of usable area
+    const pdfAxisY = MT + usableH/2;  // 148.5mm
 
-    // Vertical scale: map canvas [0..CANVAS_H] → PDF [M..PH-M]
-    const vScale = usableH / CANVAS_H;
-    // Axis Y in PDF
-    const pAxisY = M + AXIS_Y * vScale;
+    // Space above and below axis on PDF page (minus era band and footer space)
+    const pdfAboveAxis = usableH/2 - 8;   // ~131.5mm available above axis for cards
+    const pdfBelowAxis = usableH/2 - 12;  // ~127.5mm available below axis for cards
 
-    const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
+    // ── Choose years per page
+    // We want cards to never overlap: densest zone is 1848 with 4 events in 0.7 years
+    // Each card on PDF needs at least pdfCardW mm horizontally
+    // At 200px/yr on screen → cards are ~155px wide → ratio 155/200 = 0.775 yr per card
+    // So minimum mm/yr = pdfCardW / 0.775
+    // We target pdfCardW = 36mm → min mm/yr = 46.5 → ~8-9 years per page is TOO few
+    // Better: keep proportional to screen. Screen = 200px/yr, PDF page = 400mm wide
+    // Years per page = 400 / (ratio * 200) where ratio = pdfMmPerScreenPx
+    // Let's fix: 20 years per page → mm/yr = 400/20 = 20mm/yr → cards = 36mm wide = 1.8yr → fine for sparse zones
+    // But 1848 has 4 events in 0.7yr → 4 × 36 = 144mm needed in 0.7×20=14mm → too tight
+    // Solution: use 10 years per page → mm/yr = 40 → 0.7yr = 28mm → 4 cards × 36mm = 144mm → still too tight
+    // Real solution: mirror screen proportions exactly.
+    // Screen px → PDF mm scale: screen has 200px/yr, PDF has usableW mm per yearSpan
+    // We choose yearSpan so that the densest cluster fits:
+    // densest: 4 cards × (CARD_W+8px) = 4×163 = 652px → in 0.7yr × 200 = 140px → ratio = 652/140 = 4.66
+    // We need yearSpan such that 0.7yr × (usableW/yearSpan) >= 652 → yearSpan <= 0.7×400/652×200... 
+    // Simpler: just use 15 years per page. Dense zones will have stems adjusted.
+    // Actually the CORRECT approach: preserve screen aspect exactly.
+    // Screen ratio: TOTAL_W px wide = (LAST_YEAR-FIRST_YEAR) years → px/yr = PX_PER_YEAR = 200
+    // PDF: we choose pdf_mm_per_px = usableW / (yearsPerPage * PX_PER_YEAR)
+    // Then every node's screen x and cardTop map linearly to PDF x and y.
+    // yearsPerPage = 15 means 1 page = 15yr × 200px = 3000 screen px → 400mm → scale = 400/3000 = 0.1333 mm/px
 
-    let pageStart = Y_START;
-    let first = true;
+    const YEARS_PER_PAGE = 15;
+    const screenPxPerPage = YEARS_PER_PAGE * PX_PER_YEAR; // 3000px
+    const mmPerPx = usableW / screenPxPerPage;             // 400/3000 = 0.1333 mm/px
 
-    while (pageStart < Y_END) {
-      const pageEnd = Math.min(pageStart + ypp, Y_END);
-      if (!first) doc.addPage();
-      first = false;
+    // PDF card dimensions (scaled from screen)
+    const pdfCardW = CARD_W * mmPerPx;      // 155 × 0.1333 = 20.7mm
+    const pdfCardH = CARD_H * mmPerPx;      // 62 × 0.1333 = 8.3mm
 
-      const xp = yr => M + (yr - pageStart) * pxPerYr;
+    // Total pages
+    const totalYears = LAST_YEAR - FIRST_YEAR;  // 91
+    const totalPages = Math.ceil(totalYears / YEARS_PER_PAGE);
 
-      // Era bands
+    const doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a3'});
+
+    for (let pageIdx=0; pageIdx<totalPages; pageIdx++) {
+      const pageStartYr = FIRST_YEAR + pageIdx * YEARS_PER_PAGE;
+      const pageEndYr   = Math.min(pageStartYr + YEARS_PER_PAGE, LAST_YEAR);
+
+      if (pageIdx>0) doc.addPage();
+
+      // For this page, screen x range:
+      const screenXStart = xOf(pageStartYr);  // e.g. PAD_L + (pageStartYr-FIRST_YEAR)*PX_PER_YEAR
+
+      // Map screen (x, y) → pdf (px, py)
+      // px = ML + (screenX - screenXStart) * mmPerPx
+      // py = pdfAxisY + (screenY - AXIS_Y) * mmPerPx   [preserves relative vertical position]
+      function toPdfX(screenX) { return ML + (screenX - screenXStart) * mmPerPx; }
+      function toPdfY(screenY) { return pdfAxisY + (screenY - AXIS_Y) * mmPerPx; }
+
+      // Clip range in screen x
+      const clipXMin = screenXStart - 1;
+      const clipXMax = xOf(pageEndYr) + 1;
+
+      // ── Era bands
+      const pdfBandH = ERA_BAND_H * mmPerPx;
+      const pdfBandY = toPdfY(ERA_BAND_Y);
       eras.forEach(era => {
-        const x1 = Math.max(xp(era.start), M), x2 = Math.min(xp(era.end), M + usableW);
-        if (x2 <= x1) return;
-        const c = hexToRgb(era.color);
+        const sx1 = Math.max(xOf(era.start), clipXMin);
+        const sx2 = Math.min(xOf(era.end),   clipXMax);
+        if (sx2 <= sx1) return;
+        const px1 = toPdfX(sx1), px2 = toPdfX(sx2);
+        const c=hexToRgb(era.color);
         doc.setFillColor(c.r,c.g,c.b);
-        const bH = ERA_BAND_H * vScale;
-        const bY = M + ERA_BAND_Y * vScale;
-        doc.rect(x1, bY, x2-x1, bH, 'F');
-        if (x2-x1 > 10) {
-          doc.setTextColor(255,255,255); doc.setFont('times','bold'); doc.setFontSize(5);
-          doc.text(era.label, x1+1.5, bY + bH*0.65);
+        doc.rect(px1, pdfBandY, px2-px1, pdfBandH, 'F');
+        if (px2-px1 > 8) {
+          doc.setTextColor(255,255,255); doc.setFont('times','bold'); doc.setFontSize(5.5);
+          doc.text(era.label, px1+1.5, pdfBandY+pdfBandH*0.72);
         }
       });
 
-      // Axis
-      doc.setDrawColor(30,24,18); doc.setLineWidth(0.3);
-      doc.line(M, pAxisY, M+usableW, pAxisY);
+      // ── Axis
+      doc.setDrawColor(28,24,18); doc.setLineWidth(0.35);
+      doc.line(ML, pdfAxisY, ML+usableW, pdfAxisY);
 
-      // Ticks
-      for (let yr = Math.ceil(pageStart/5)*5; yr <= pageEnd; yr += 5) {
-        const x = xp(yr); if (x<M-0.1||x>M+usableW+0.1) continue;
-        const major = yr%10===0;
+      // ── Ticks + labels
+      for (let yr=Math.ceil(pageStartYr); yr<=pageEndYr; yr++) {
+        const sx=xOf(yr);
+        if (sx<clipXMin||sx>clipXMax) continue;
+        const px=toPdfX(sx);
+        const major=yr%10===0, mid=yr%5===0;
+        const th = major ? 2.5*mmPerPx*PX_PER_YEAR/10 : (mid ? 1.4*mmPerPx*PX_PER_YEAR/10 : 0);
+        if (!major && !mid) continue;
         doc.setDrawColor(150,130,110); doc.setLineWidth(0.15);
-        doc.line(x, pAxisY-1, x, pAxisY+1);
-        if (major) {
-          doc.setFont('times','normal'); doc.setFontSize(5); doc.setTextColor(110,90,70);
-          doc.text(String(yr), x, pAxisY+4, { align:'center' });
+        doc.line(px, pdfAxisY-th, px, pdfAxisY+th);
+        if (major||mid) {
+          doc.setFont('times','normal');
+          doc.setFontSize(major?6:5);
+          doc.setTextColor(major?100:130, major?85:115, major?70:95);
+          doc.text(String(yr), px, pdfAxisY+(7*mmPerPx*PX_PER_YEAR/40), {align:'center'});
         }
       }
 
-      // Cards — use current cardTop from nodes
+      // ── Cards
       nodes.forEach(node => {
-        if (node.data.y < pageStart - 0.1 || node.data.y >= pageEnd + 0.1) return;
-        const x   = xp(node.data.y);
-        if (x < M+0.5 || x > M+usableW-0.5) return;
-        const c   = hexToRgb(node.color);
+        const sx = node.x;
+        if (sx < clipXMin-pdfCardW*0.5/mmPerPx || sx > clipXMax+pdfCardW*0.5/mmPerPx) return;
 
-        // Card geometry in PDF (scale from canvas coords)
-        const pCardW  = 30;
-        const pCardH  = CARD_H * vScale;
-        const pCardY  = M + node.cardTop * vScale;
-        const pCardX  = x - pCardW / 2;
+        const px   = toPdfX(sx);
+        const c    = hexToRgb(node.color);
 
-        // Clamp card within page
-        const clampedY = Math.max(M, Math.min(PH - M - pCardH, pCardY));
+        // Card top and bottom in PDF coords
+        const pCardTop = toPdfY(node.cardTop);
+        const pCardBot = toPdfY(node.cardTop + CARD_H);
+        const pCardH2  = pCardBot - pCardTop;
+        const pCardX   = px - pdfCardW/2;
+
+        // Clamp vertically within page usable area
+        const clampTop = MT + 1;
+        const clampBot = PH - MB - 7;  // leave space for footer
+        const cTop = Math.max(clampTop, Math.min(clampBot - pCardH2, pCardTop));
+
+        // Is card above or below axis?
+        const isUp = node.cardTop + CARD_H < AXIS_Y;
+        const stemEndPdf = isUp ? cTop + pCardH2 : cTop;
 
         // Stem
-        const isUp  = node.cardTop + CARD_H < AXIS_Y;
-        const stemY = isUp ? clampedY + pCardH : clampedY;
-        doc.setDrawColor(c.r,c.g,c.b); doc.setLineWidth(0.2);
-        doc.line(x, pAxisY, x, stemY);
+        doc.setDrawColor(c.r,c.g,c.b); doc.setLineWidth(0.22);
+        doc.line(px, pdfAxisY, px, stemEndPdf);
 
-        // Dot
-        doc.setFillColor(c.r,c.g,c.b); doc.circle(x, pAxisY, 0.75, 'F');
+        // Dot on axis
+        doc.setFillColor(c.r,c.g,c.b); doc.circle(px, pdfAxisY, 0.9, 'F');
+        doc.setDrawColor(245,242,236); doc.setLineWidth(0.4); doc.circle(px, pdfAxisY, 1.2, 'S');
 
-        // Card bg
+        // Card background
         doc.setFillColor(252,249,244);
-        doc.rect(pCardX, clampedY, pCardW, pCardH, 'F');
-        doc.setDrawColor(c.r,c.g,c.b); doc.setLineWidth(0.45);
-        doc.line(pCardX, clampedY, pCardX+pCardW, clampedY);
+        doc.rect(pCardX, cTop, pdfCardW, pCardH2, 'F');
 
-        // Year
+        // Colored top bar
+        doc.setFillColor(c.r,c.g,c.b);
+        doc.rect(pCardX, cTop, pdfCardW, 0.7, 'F');
+
+        // Year text
         doc.setFont('times','bold'); doc.setFontSize(5.5); doc.setTextColor(c.r,c.g,c.b);
-        doc.text(String(Math.floor(node.data.y)), pCardX+2, clampedY+4);
+        doc.text(String(Math.floor(node.data.y)), pCardX+1.5, cTop+pCardH2*0.32);
 
-        // Text
-        doc.setFont('times','normal'); doc.setFontSize(5); doc.setTextColor(30,24,18);
-        const lines = doc.splitTextToSize(node.data.t, pCardW-3);
-        doc.text(lines.slice(0,4), pCardX+2, clampedY+8, { lineHeightFactor:1.25 });
+        // Separator
+        doc.setDrawColor(215,205,192); doc.setLineWidth(0.15);
+        doc.line(pCardX+1.5, cTop+pCardH2*0.42, pCardX+pdfCardW-1.5, cTop+pCardH2*0.42);
+
+        // Event text
+        doc.setFont('times','normal'); doc.setFontSize(4.8); doc.setTextColor(35,28,20);
+        const lines = doc.splitTextToSize(node.data.t, pdfCardW-3);
+        const textY = cTop + pCardH2*0.50;
+        doc.text(lines.slice(0,5), pCardX+1.5, textY, {lineHeightFactor:1.3});
       });
 
-      // Footer
+      // ── Footer
       doc.setFont('times','italic'); doc.setFontSize(6); doc.setTextColor(150,130,110);
-      doc.text('Frise chronologique · France XIXe siècle', M, PH-4);
-      doc.text(`${Math.round(pageStart)} – ${Math.round(pageEnd)}`, PW-M, PH-4, { align:'right' });
-      pageStart = pageEnd;
-    }
-
-    // Page numbers
-    const total = doc.internal.getNumberOfPages();
-    for (let p=1;p<=total;p++) {
-      doc.setPage(p);
-      doc.setFont('times','normal'); doc.setFontSize(6); doc.setTextColor(150,130,110);
-      doc.text(`${p} / ${total}`, PW/2, PH-4, { align:'center' });
+      doc.text('Frise chronologique · France XIXe siècle', ML, PH-4);
+      doc.text(`${pageStartYr} – ${pageEndYr}  ·  page ${pageIdx+1} / ${totalPages}`, PW-MR, PH-4, {align:'right'});
     }
 
     doc.save('frise_chronologique_france.pdf');
-    modalBody.textContent = '✓ PDF téléchargé avec succès !';
+    modalBody.textContent=`✓ PDF généré — ${totalPages} pages de ${YEARS_PER_PAGE} ans chacune`;
   } catch(err) {
-    modalBody.textContent = 'Erreur : ' + err.message;
-    console.error(err);
+    modalBody.textContent='Erreur : '+err.message; console.error(err);
   }
 }
 </script>
