@@ -13,11 +13,6 @@
   --ink: #1c1812;
   --muted: #9a8a78;
   --line: #d0c2b0;
-  --c1: #8b2e1a;
-  --c2: #1a5c8b;
-  --c3: #1a7a42;
-  --c4: #6b1a8b;
-  --c5: #8b6a1a;
 }
 html, body {
   height: 100%;
@@ -32,11 +27,18 @@ html, body {
   height: 42px;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 24px;
   border-bottom: 1px solid var(--line);
   background: var(--bg);
   flex-shrink: 0;
+  z-index: 100;
+  position: relative;
+}
+.topbar-hint {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
 }
 .pdf-btn {
   display: flex; align-items: center; gap: 7px;
@@ -54,102 +56,60 @@ html, body {
   height: calc(100vh - 42px);
   overflow-x: auto;
   overflow-y: hidden;
-  cursor: grab;
   user-select: none;
-  display: flex;
-  align-items: center; /* center vertically */
 }
-.scroll-wrapper:active { cursor: grabbing; }
 
-/* CANVAS — tall enough for labels above & below */
+/* CANVAS */
 .canvas {
   position: relative;
-  flex-shrink: 0;
-  /* height & width set by JS */
+  cursor: grab;
 }
+.canvas.panning { cursor: grabbing; }
+.canvas.dragging-card { cursor: ns-resize; }
 
-/* ERA BANDS above the axis */
+/* ERA BAND */
 .era-band {
   position: absolute;
-  height: 22px;
   display: flex;
   align-items: center;
   padding-left: 7px;
   overflow: hidden;
-  border-radius: 1px;
+  pointer-events: none;
 }
 .era-band-label {
   font-family: 'Playfair Display', serif;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: white;
-  white-space: nowrap;
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: white; white-space: nowrap;
 }
 
 /* AXIS */
 .axis-line {
   position: absolute;
-  left: 0; right: 0;
-  height: 2px;
-  background: var(--ink);
-  opacity: 0.15;
-  border-radius: 1px;
+  left: 0; right: 0; height: 2px;
+  background: var(--ink); opacity: 0.15;
+  pointer-events: none;
 }
 
-/* YEAR TICK on axis */
+/* TICK */
 .yr-tick {
   position: absolute;
-  width: 1px;
-  background: var(--muted);
-  opacity: 0.4;
-  transform: translateX(-50%);
-}
-.yr-tick.major { opacity: 0.65; }
-
-/* EVENT ITEM — SVG drawn per event, absolutely positioned */
-.evt-svg {
-  position: absolute;
-  overflow: visible;
+  width: 1px; background: var(--muted);
+  opacity: 0.35; transform: translateX(-50%);
   pointer-events: none;
-  z-index: 2;
 }
+.yr-tick.major { opacity: 0.6; }
 
-/* Foreignobject text label */
-.evt-label {
+/* SVG stems layer */
+.stems-svg {
   position: absolute;
-  pointer-events: auto;
-  cursor: pointer;
-  z-index: 3;
-}
-.evt-label-inner {
-  background: white;
-  border-top: 2px solid;
-  padding: 5px 8px 6px;
-  width: 148px;
-  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
-  transition: box-shadow 0.15s;
-}
-.evt-label:hover .evt-label-inner,
-.evt-label.pinned .evt-label-inner {
-  box-shadow: 0 4px 18px rgba(0,0,0,0.13);
-  z-index: 10;
-}
-.evt-year {
-  font-family: 'Playfair Display', serif;
-  font-size: 11px;
-  font-weight: 700;
-  display: block;
-  margin-bottom: 2px;
-}
-.evt-text {
-  font-size: 11.5px;
-  line-height: 1.4;
-  color: #3a3028;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
 }
 
-/* DOT on axis */
+/* DOT */
 .evt-dot {
   position: absolute;
   width: 8px; height: 8px;
@@ -158,11 +118,33 @@ html, body {
   z-index: 5;
   border: 2px solid var(--bg);
   pointer-events: none;
-  transition: transform 0.15s;
 }
-.evt-label:hover ~ .evt-dot,
-.evt-label.pinned ~ .evt-dot {
-  transform: translate(-50%, -50%) scale(1.5);
+
+/* CARD */
+.evt-card {
+  position: absolute;
+  width: 144px;
+  background: white;
+  border-top: 2px solid;
+  padding: 5px 8px 7px;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.07);
+  z-index: 4;
+  cursor: ns-resize;
+  transition: box-shadow 0.15s;
+}
+.evt-card:hover { box-shadow: 0 3px 16px rgba(0,0,0,0.14); z-index: 10; }
+.evt-card.dragging {
+  box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+  z-index: 100;
+  opacity: 0.92;
+}
+.evt-year {
+  font-family: 'Playfair Display', serif;
+  font-size: 11px; font-weight: 700;
+  display: block; margin-bottom: 2px;
+}
+.evt-text {
+  font-size: 11px; line-height: 1.38; color: #3a3028;
 }
 
 /* LEGEND */
@@ -197,6 +179,7 @@ html, body {
 <body>
 
 <div class="topbar">
+  <span class="topbar-hint">↕ Glissez les fiches verticalement · ← → Naviguez horizontalement</span>
   <button class="pdf-btn" onclick="exportPDF()">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -295,194 +278,217 @@ const allEvents = [
 ];
 
 // ── LAYOUT ────────────────────────────────────────────────────────────────
-const PX_PER_YEAR = 90;   // horizontal scale
+const PX_PER_YEAR = 90;
 const Y_START     = 1787;
 const Y_END       = 1883;
 const PAD_L       = 60;
 const PAD_R       = 60;
-const CARD_W      = 148;  // label card width
-const CARD_H_EST  = 56;   // rough card height for slot reservation
+const CARD_W      = 144;
+const CARD_H      = 58;
+const VIEWPORT_H  = window.innerHeight - 42;
+const AXIS_Y      = Math.round(VIEWPORT_H * 0.5);
+const TOTAL_W     = PAD_L + (Y_END - Y_START) * PX_PER_YEAR + PAD_R;
+const CANVAS_H    = VIEWPORT_H;
+const ERA_BAND_H  = 18;
+const ERA_BAND_Y  = AXIS_Y - ERA_BAND_H - 10;
 
-// Vertical layout — axis is centered, labels go up or down
-// We'll measure available space from screen height
-const SCREEN_H      = window.innerHeight - 42;
-const HALF           = Math.floor(SCREEN_H / 2); // half-height available each side
-const AXIS_Y        = HALF; // axis sits at vertical center of canvas
+// Min/max card top (keep cards within canvas)
+const CARD_TOP_MIN = 4;
+const CARD_TOP_MAX = CANVAS_H - CARD_H - 4;
 
-// Slot step — vertical slots above/below axis
-const SLOT_STEP     = CARD_H_EST + 14;
-const N_SLOTS       = Math.floor((HALF - 60) / SLOT_STEP); // how many rows fit above/below
+function xOf(yr) { return PAD_L + (yr - Y_START) * PX_PER_YEAR; }
 
-const TOTAL_W       = PAD_L + (Y_END - Y_START) * PX_PER_YEAR + PAD_R;
-const CANVAS_H      = SCREEN_H;
+// ── INITIAL PLACEMENT (collision-free) ────────────────────────────────────
+const sorted = [...allEvents].sort((a, b) => a.y - b.y);
+const placedUp = [], placedDn = [];
 
-function xOf(year) { return PAD_L + (year - Y_START) * PX_PER_YEAR; }
+function overlaps(r1, r2) {
+  return !(r1.x2 + 6 < r2.x1 || r2.x2 + 6 < r1.x1 || r1.y2 < r2.y1 || r2.y2 < r1.y1);
+}
 
-// ── COLLISION SYSTEM ──────────────────────────────────────────────────────
-// For each slot (up 0..N-1, down 0..N-1), track last occupied right-edge x
-const upSlots   = new Array(N_SLOTS).fill(-Infinity);
-const downSlots = new Array(N_SLOTS).fill(-Infinity);
-const MIN_GAP   = CARD_W * 0.45;
+function findCardTop(x, preferUp) {
+  const cx1 = x - CARD_W / 2, cx2 = x + CARD_W / 2;
+  const maxUp = AXIS_Y - ERA_BAND_H - 14 - CARD_H;
+  const maxDn = CANVAS_H - CARD_H - 4;
+  const step  = 6;
 
-function assignSlot(x, preferUp) {
-  const dirs = preferUp ? ['up','dn'] : ['dn','up'];
-  for (const d of dirs) {
-    const pool = d === 'up' ? upSlots : downSlots;
-    for (let s = 0; s < pool.length; s++) {
-      if (x - pool[s] > MIN_GAP) {
-        pool[s] = x + CARD_W / 2;
-        return { dir: d, slot: s };
+  for (const [goUp, pool] of preferUp
+      ? [[true, placedUp],[false, placedDn]]
+      : [[false, placedDn],[true, placedUp]]) {
+    const start = goUp ? AXIS_Y - 20 - CARD_H : AXIS_Y + 20;
+    const limit = goUp ? CARD_TOP_MIN : maxDn;
+    const dir   = goUp ? -step : step;
+
+    for (let t = start; goUp ? t >= limit : t <= limit; t += dir) {
+      const r = { x1: cx1, x2: cx2, y1: t, y2: t + CARD_H };
+      if (!pool.some(p => overlaps(r, p))) {
+        pool.push(r);
+        return { cardTop: t, up: goUp };
       }
     }
   }
-  // Fallback: slot 0, prefer direction
-  const d = dirs[0];
-  (d === 'up' ? upSlots : downSlots)[0] = x + CARD_W / 2;
-  return { dir: d, slot: 0 };
+  // Fallback
+  const t = preferUp ? CARD_TOP_MIN : CARD_TOP_MAX;
+  (preferUp ? placedUp : placedDn).push({ x1:cx1, x2:cx2, y1:t, y2:t+CARD_H });
+  return { cardTop: t, up: preferUp };
 }
 
 // ── BUILD DOM ─────────────────────────────────────────────────────────────
 const canvasEl = document.getElementById('canvas');
-canvasEl.style.width  = TOTAL_W + 'px';
-canvasEl.style.height = CANVAS_H + 'px';
-canvasEl.style.position = 'relative';
+canvasEl.style.cssText = `width:${TOTAL_W}px;height:${CANVAS_H}px;position:relative;`;
 
-// ERA BANDS (just above axis)
-const ERA_BAND_H  = 18;
-const ERA_BAND_Y  = AXIS_Y - ERA_BAND_H - 8; // just above axis gap
+// SVG stems layer
+const stemsSvg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+stemsSvg.setAttribute('width', TOTAL_W);
+stemsSvg.setAttribute('height', CANVAS_H);
+stemsSvg.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;z-index:1;overflow:visible;`;
+canvasEl.appendChild(stemsSvg);
 
+// Era bands
 eras.forEach(era => {
   const x1 = xOf(era.start), x2 = xOf(era.end);
   const band = document.createElement('div');
   band.className = 'era-band';
   Object.assign(band.style, {
-    left:   x1 + 'px',
-    top:    ERA_BAND_Y + 'px',
-    width:  (x2 - x1) + 'px',
-    height: ERA_BAND_H + 'px',
-    background: era.color,
-    opacity: '0.88',
+    left: x1+'px', top: ERA_BAND_Y+'px',
+    width: (x2-x1)+'px', height: ERA_BAND_H+'px',
+    background: era.color, opacity:'0.88',
   });
   band.innerHTML = `<span class="era-band-label">${era.label}</span>`;
   canvasEl.appendChild(band);
 });
 
-// AXIS LINE
-const axisLine = document.createElement('div');
-axisLine.className = 'axis-line';
-axisLine.style.top = AXIS_Y + 'px';
-canvasEl.appendChild(axisLine);
+// Axis
+const axisEl = document.createElement('div');
+axisEl.className = 'axis-line';
+axisEl.style.top = AXIS_Y + 'px';
+canvasEl.appendChild(axisEl);
 
-// YEAR TICKS on axis
-for (let yr = Math.ceil(Y_START / 5) * 5; yr <= Y_END; yr += 5) {
+// Ticks
+for (let yr = Math.ceil(Y_START/5)*5; yr <= Y_END; yr += 5) {
   const major = yr % 10 === 0;
-  const x = xOf(yr);
-  const tickH = major ? 10 : 5;
+  const x = xOf(yr), h = major ? 10 : 5;
   const tick = document.createElement('div');
-  tick.className = 'yr-tick' + (major ? ' major' : '');
-  Object.assign(tick.style, {
-    left:   x + 'px',
-    top:    (AXIS_Y - tickH / 2) + 'px',
-    height: tickH + 'px',
-  });
+  tick.className = 'yr-tick' + (major?' major':'');
+  Object.assign(tick.style, { left:x+'px', top:(AXIS_Y-h/2)+'px', height:h+'px' });
   canvasEl.appendChild(tick);
 }
 
-// EVENTS
-const sorted = [...allEvents].sort((a, b) => a.y - b.y);
+// ── EVENT NODES ───────────────────────────────────────────────────────────
+// Each event node: { data, x, cardTop, stemLine (SVG line), dot (div), card (div) }
+const nodes = [];
 
-sorted.forEach((ev) => {
+sorted.forEach(ev => {
   const x     = xOf(ev.y);
   const era   = eras.find(e => e.id === ev.e);
-  const color = era ? era.color : '#666';
+  const color = era ? era.color : '#888';
   const prefUp = ev.e % 2 === 1;
-  const { dir, slot } = assignSlot(x, prefUp);
+  const { cardTop } = findCardTop(x, prefUp);
 
-  // Card Y position
-  const distFromAxis = 28 + slot * SLOT_STEP; // minimum gap from axis
-  const cardTopY = dir === 'up'
-    ? AXIS_Y - distFromAxis - CARD_H_EST
-    : AXIS_Y + distFromAxis;
+  // SVG stem line
+  const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', '1');
+  line.setAttribute('opacity', '0.3');
+  stemsSvg.appendChild(line);
 
-  // Stem: from dot (on axis) to card edge
-  const dotY    = AXIS_Y;
-  const stemEnd = dir === 'up' ? cardTopY + CARD_H_EST : cardTopY;
-
-  // Draw connecting line via SVG
-  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.style.cssText = `position:absolute;left:0;top:0;width:${TOTAL_W}px;height:${CANVAS_H}px;pointer-events:none;z-index:1;overflow:visible`;
-  // Only create per-event SVG lines so we don't create one giant SVG
-  // Use a thin absolute-positioned div line instead (simpler, no SVG overhead)
-
-  // Thin line div
-  const line = document.createElement('div');
-  const lineLen  = Math.abs(stemEnd - dotY);
-  const lineTop  = Math.min(dotY, stemEnd);
-  Object.assign(line.style, {
-    position:    'absolute',
-    left:        x + 'px',
-    top:         lineTop + 'px',
-    width:       '1px',
-    height:      lineLen + 'px',
-    background:  color,
-    opacity:     '0.28',
-    transform:   'translateX(-50%)',
-    zIndex:      '1',
-    pointerEvents: 'none',
-  });
-  canvasEl.appendChild(line);
-
-  // Dot on axis
+  // Dot
   const dot = document.createElement('div');
   dot.className = 'evt-dot';
-  Object.assign(dot.style, {
-    left:       x + 'px',
-    top:        dotY + 'px',
-    background: color,
-  });
+  Object.assign(dot.style, { left:x+'px', top:AXIS_Y+'px', background:color });
   canvasEl.appendChild(dot);
 
-  // Label card
-  const label = document.createElement('div');
-  label.className = 'evt-label';
-  Object.assign(label.style, {
-    left:   (x - CARD_W / 2) + 'px',
-    top:    cardTopY + 'px',
-    width:  CARD_W + 'px',
-    zIndex: '3',
+  // Card
+  const card = document.createElement('div');
+  card.className = 'evt-card';
+  Object.assign(card.style, {
+    left: (x - CARD_W/2)+'px',
+    top:  cardTop+'px',
+    borderTopColor: color,
+    width: CARD_W+'px',
   });
+  card.innerHTML = `<span class="evt-year" style="color:${color}">${Math.floor(ev.y)}</span><span class="evt-text">${ev.t}</span>`;
+  canvasEl.appendChild(card);
 
-  label.innerHTML = `
-    <div class="evt-label-inner" style="border-top-color:${color}">
-      <span class="evt-year" style="color:${color}">${Math.floor(ev.y)}</span>
-      <span class="evt-text">${ev.t}</span>
-    </div>`;
-
-  label.addEventListener('click', e => {
-    e.stopPropagation();
-    label.classList.toggle('pinned');
-  });
-  canvasEl.appendChild(label);
+  const node = { data: ev, x, cardTop, color, line, dot, card };
+  nodes.push(node);
+  updateStem(node);
 });
 
-// Click canvas to unpin
-canvasEl.addEventListener('click', () => {
-  document.querySelectorAll('.evt-label.pinned').forEach(el => el.classList.remove('pinned'));
-});
+function updateStem(node) {
+  const cardCenterX = node.x;
+  // stem connects dot (axis) to middle-bottom or middle-top of card
+  const dotY = AXIS_Y;
+  const isUp = node.cardTop + CARD_H < AXIS_Y;
+  const cardEdgeY = isUp ? node.cardTop + CARD_H : node.cardTop;
+  node.line.setAttribute('x1', cardCenterX);
+  node.line.setAttribute('y1', dotY);
+  node.line.setAttribute('x2', cardCenterX);
+  node.line.setAttribute('y2', cardEdgeY);
+}
 
-// ── DRAG SCROLL ────────────────────────────────────────────────────────────
+// ── DRAG BEHAVIOUR ────────────────────────────────────────────────────────
+// Two modes:
+// 1. Dragging a card → move it vertically
+// 2. Dragging canvas background → pan horizontally
+
+let activeCardNode = null;  // card being dragged
+let cardDragStartY = 0;
+let cardDragStartTop = 0;
+
+let panning = false;
+let panStartX = 0;
+let panScrollLeft = 0;
+
 const sw = document.getElementById('scrollWrapper');
-let dragging = false, startX = 0, origScroll = 0;
-sw.addEventListener('mousedown', e => {
-  dragging = true; startX = e.pageX; origScroll = sw.scrollLeft;
-  sw.style.cursor = 'grabbing';
+
+// CARD drag start
+nodes.forEach(node => {
+  node.card.addEventListener('mousedown', e => {
+    e.stopPropagation();
+    activeCardNode = node;
+    cardDragStartY   = e.clientY;
+    cardDragStartTop = node.cardTop;
+    node.card.classList.add('dragging');
+    canvasEl.classList.add('dragging-card');
+  });
 });
-window.addEventListener('mouseup',   () => { dragging = false; sw.style.cursor = 'grab'; });
+
+// CANVAS pan start
+canvasEl.addEventListener('mousedown', e => {
+  if (activeCardNode) return; // already handled
+  panning = true;
+  panStartX    = e.clientX;
+  panScrollLeft = sw.scrollLeft;
+  canvasEl.classList.add('panning');
+});
+
 window.addEventListener('mousemove', e => {
-  if (!dragging) return;
-  sw.scrollLeft = origScroll - (e.pageX - startX);
+  if (activeCardNode) {
+    const delta = e.clientY - cardDragStartY;
+    let newTop = cardDragStartTop + delta;
+    newTop = Math.max(CARD_TOP_MIN, Math.min(CARD_TOP_MAX, newTop));
+    activeCardNode.cardTop = newTop;
+    activeCardNode.card.style.top = newTop + 'px';
+    updateStem(activeCardNode);
+  } else if (panning) {
+    sw.scrollLeft = panScrollLeft - (e.clientX - panStartX);
+  }
 });
-// Start at 1810
+
+window.addEventListener('mouseup', () => {
+  if (activeCardNode) {
+    activeCardNode.card.classList.remove('dragging');
+    activeCardNode = null;
+    canvasEl.classList.remove('dragging-card');
+  }
+  if (panning) {
+    panning = false;
+    canvasEl.classList.remove('panning');
+  }
+});
+
+// Start scroll at ~1810
 sw.scrollLeft = xOf(1810) - 80;
 
 // ── LEGEND ─────────────────────────────────────────────────────────────────
@@ -494,13 +500,9 @@ eras.forEach(era => {
   legendEl.appendChild(item);
 });
 
-// ── PDF EXPORT ──────────────────────────────────────────────────────────────
+// ── PDF EXPORT ─────────────────────────────────────────────────────────────
 function hexToRgb(hex) {
-  return {
-    r: parseInt(hex.slice(1,3),16),
-    g: parseInt(hex.slice(3,5),16),
-    b: parseInt(hex.slice(5,7),16)
-  };
+  return { r:parseInt(hex.slice(1,3),16), g:parseInt(hex.slice(3,5),16), b:parseInt(hex.slice(5,7),16) };
 }
 
 async function exportPDF() {
@@ -514,20 +516,22 @@ async function exportPDF() {
     await new Promise(r => setTimeout(r, 80));
     const { jsPDF } = window.jspdf;
 
+    // We'll replicate the current layout to PDF.
+    // Scale factor: canvas uses PX_PER_YEAR px/yr, PDF uses pxPerYr mm/yr
     const PW = 420, PH = 297, M = 14;
     const usableW = PW - M * 2;
-    const PX  = 2.8; // mm per year
-    const ypp = Math.floor(usableW / PX); // years per page
+    const usableH = PH - M * 2;
+
+    // Horizontal: years per page
+    const pxPerYr = 2.8; // mm / year in PDF
+    const ypp = Math.floor(usableW / pxPerYr);
+
+    // Vertical scale: map canvas [0..CANVAS_H] → PDF [M..PH-M]
+    const vScale = usableH / CANVAS_H;
+    // Axis Y in PDF
+    const pAxisY = M + AXIS_Y * vScale;
 
     const doc = new jsPDF({ orientation:'landscape', unit:'mm', format:'a3' });
-
-    const aY      = PH / 2;         // axis at center of page
-    const bandH   = 7;
-    const bandY   = aY - bandH - 5;
-    const cardW   = 32;
-    const stemsU  = [12, 20, 28, 36, 16, 24, 32];
-    const stemsD  = [12, 20, 28, 36, 16, 24, 32];
-    const cardH   = 14;
 
     let pageStart = Y_START;
     let first = true;
@@ -537,117 +541,92 @@ async function exportPDF() {
       if (!first) doc.addPage();
       first = false;
 
-      const xp = yr => M + (yr - pageStart) * PX;
+      const xp = yr => M + (yr - pageStart) * pxPerYr;
 
       // Era bands
       eras.forEach(era => {
-        const x1 = Math.max(xp(era.start), M);
-        const x2 = Math.min(xp(era.end), M + usableW);
+        const x1 = Math.max(xp(era.start), M), x2 = Math.min(xp(era.end), M + usableW);
         if (x2 <= x1) return;
         const c = hexToRgb(era.color);
         doc.setFillColor(c.r,c.g,c.b);
-        doc.rect(x1, bandY, x2-x1, bandH, 'F');
-        if (x2-x1 > 12) {
-          doc.setTextColor(255,255,255);
-          doc.setFont('times','bold');
-          doc.setFontSize(5.5);
-          doc.text(era.label, x1+1.5, bandY+5);
+        const bH = ERA_BAND_H * vScale;
+        const bY = M + ERA_BAND_Y * vScale;
+        doc.rect(x1, bY, x2-x1, bH, 'F');
+        if (x2-x1 > 10) {
+          doc.setTextColor(255,255,255); doc.setFont('times','bold'); doc.setFontSize(5);
+          doc.text(era.label, x1+1.5, bY + bH*0.65);
         }
       });
 
       // Axis
-      doc.setDrawColor(30,24,18);
-      doc.setLineWidth(0.3);
-      doc.line(M, aY, M+usableW, aY);
+      doc.setDrawColor(30,24,18); doc.setLineWidth(0.3);
+      doc.line(M, pAxisY, M+usableW, pAxisY);
 
-      // Ruler ticks
+      // Ticks
       for (let yr = Math.ceil(pageStart/5)*5; yr <= pageEnd; yr += 5) {
-        const x = xp(yr);
-        if (x < M-0.1 || x > M+usableW+0.1) continue;
-        const major = yr % 10 === 0;
-        doc.setDrawColor(150,130,110);
-        doc.setLineWidth(0.15);
-        doc.line(x, aY-1, x, aY+1);
+        const x = xp(yr); if (x<M-0.1||x>M+usableW+0.1) continue;
+        const major = yr%10===0;
+        doc.setDrawColor(150,130,110); doc.setLineWidth(0.15);
+        doc.line(x, pAxisY-1, x, pAxisY+1);
         if (major) {
-          doc.setFont('times','normal');
-          doc.setFontSize(5);
-          doc.setTextColor(120,100,80);
-          doc.text(String(yr), x, aY+4.5, { align:'center' });
+          doc.setFont('times','normal'); doc.setFontSize(5); doc.setTextColor(110,90,70);
+          doc.text(String(yr), x, pAxisY+4, { align:'center' });
         }
       }
 
-      // Events on this page
-      const pageEvts = sorted.filter(ev => ev.y >= pageStart-0.1 && ev.y < pageEnd+0.1);
-      const upS = new Array(7).fill(-Infinity);
-      const dnS = new Array(7).fill(-Infinity);
-
-      pageEvts.forEach((ev) => {
-        const x = xp(ev.y);
+      // Cards — use current cardTop from nodes
+      nodes.forEach(node => {
+        if (node.data.y < pageStart - 0.1 || node.data.y >= pageEnd + 0.1) return;
+        const x   = xp(node.data.y);
         if (x < M+0.5 || x > M+usableW-0.5) return;
-        const era = eras.find(e => e.id === ev.e);
-        const c   = hexToRgb(era ? era.color : '#666666');
-        const prefUp = ev.e % 2 === 1;
-        const dirs = prefUp ? ['up','dn'] : ['dn','up'];
-        let d='dn', s=0;
-        outer: for (const dd of dirs) {
-          const pool = dd==='up' ? upS : dnS;
-          for (let i=0;i<pool.length;i++) {
-            if (x - pool[i] > cardW*0.52) { d=dd; s=i; break outer; }
-          }
-        }
-        if (d==='up') upS[s] = x+cardW/2; else dnS[s] = x+cardW/2;
-        const stemLen = (d==='up' ? stemsU : stemsD)[s % 7];
+        const c   = hexToRgb(node.color);
 
-        // Stem line
-        doc.setDrawColor(c.r,c.g,c.b);
-        doc.setLineWidth(0.2);
-        if (d==='up') doc.line(x, aY, x, aY-stemLen);
-        else          doc.line(x, aY, x, aY+stemLen);
+        // Card geometry in PDF (scale from canvas coords)
+        const pCardW  = 30;
+        const pCardH  = CARD_H * vScale;
+        const pCardY  = M + node.cardTop * vScale;
+        const pCardX  = x - pCardW / 2;
+
+        // Clamp card within page
+        const clampedY = Math.max(M, Math.min(PH - M - pCardH, pCardY));
+
+        // Stem
+        const isUp  = node.cardTop + CARD_H < AXIS_Y;
+        const stemY = isUp ? clampedY + pCardH : clampedY;
+        doc.setDrawColor(c.r,c.g,c.b); doc.setLineWidth(0.2);
+        doc.line(x, pAxisY, x, stemY);
 
         // Dot
-        doc.setFillColor(c.r,c.g,c.b);
-        doc.circle(x, aY, 0.8, 'F');
+        doc.setFillColor(c.r,c.g,c.b); doc.circle(x, pAxisY, 0.75, 'F');
 
-        // Card
-        const cx = x - cardW/2;
-        const cy = d==='up' ? aY-stemLen-cardH : aY+stemLen;
+        // Card bg
         doc.setFillColor(252,249,244);
-        doc.rect(cx, cy, cardW, cardH, 'F');
-        doc.setDrawColor(c.r,c.g,c.b);
-        doc.setLineWidth(0.5);
-        doc.line(cx, cy, cx+cardW, cy);
+        doc.rect(pCardX, clampedY, pCardW, pCardH, 'F');
+        doc.setDrawColor(c.r,c.g,c.b); doc.setLineWidth(0.45);
+        doc.line(pCardX, clampedY, pCardX+pCardW, clampedY);
 
         // Year
-        doc.setFont('times','bold');
-        doc.setFontSize(5.5);
-        doc.setTextColor(c.r,c.g,c.b);
-        doc.text(String(Math.floor(ev.y)), cx+2, cy+4);
+        doc.setFont('times','bold'); doc.setFontSize(5.5); doc.setTextColor(c.r,c.g,c.b);
+        doc.text(String(Math.floor(node.data.y)), pCardX+2, clampedY+4);
 
         // Text
-        doc.setFont('times','normal');
-        doc.setFontSize(5);
-        doc.setTextColor(30,24,18);
-        const lines = doc.splitTextToSize(ev.t, cardW-3);
-        doc.text(lines.slice(0,3), cx+2, cy+8, { lineHeightFactor:1.25 });
+        doc.setFont('times','normal'); doc.setFontSize(5); doc.setTextColor(30,24,18);
+        const lines = doc.splitTextToSize(node.data.t, pCardW-3);
+        doc.text(lines.slice(0,4), pCardX+2, clampedY+8, { lineHeightFactor:1.25 });
       });
 
       // Footer
-      doc.setFont('times','italic');
-      doc.setFontSize(6);
-      doc.setTextColor(150,130,110);
+      doc.setFont('times','italic'); doc.setFontSize(6); doc.setTextColor(150,130,110);
       doc.text('Frise chronologique · France XIXe siècle', M, PH-4);
       doc.text(`${Math.round(pageStart)} – ${Math.round(pageEnd)}`, PW-M, PH-4, { align:'right' });
-
       pageStart = pageEnd;
     }
 
     // Page numbers
     const total = doc.internal.getNumberOfPages();
-    for (let p=1; p<=total; p++) {
+    for (let p=1;p<=total;p++) {
       doc.setPage(p);
-      doc.setFont('times','normal');
-      doc.setFontSize(6);
-      doc.setTextColor(150,130,110);
+      doc.setFont('times','normal'); doc.setFontSize(6); doc.setTextColor(150,130,110);
       doc.text(`${p} / ${total}`, PW/2, PH-4, { align:'center' });
     }
 
